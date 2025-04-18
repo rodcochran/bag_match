@@ -7,13 +7,12 @@ This example shows how to:
 3. Find similar bags from a collection
 """
 
-from bag_match import BagMatcher
-
 from rich import print
+from bag_match import BagMatcher
 
 def main():
     # Initialize the matcher with default settings
-    matcher = BagMatcher()
+    matcher = BagMatcher(model_name="all-MiniLM-L6-v2")
     
     # Example bags
     query_bag = {"apple", "banana", "orange"}
@@ -34,13 +33,13 @@ def main():
     print(f"Similarity between {{'apple', 'banana'}} and {{'apple', 'pear'}}: {similarity:.3f}")
     print()
     
-    # Find similar bags using cosine similarity
-    print("Finding similar bags using cosine similarity:")
+    # Find similar bags using embedding similarity
+    print("Finding similar bags using embedding similarity:")
     similar_bags = matcher.find_similar_bags(
         query_bag=query_bag,
         candidate_bags=candidate_bags,
         top_k=3,
-        similarity_method="cosine"
+        method="embedding"
     )
     
     print(f"Top 3 similar bags to {query_bag}:")
@@ -54,7 +53,7 @@ def main():
         query_bag=query_bag,
         candidate_bags=candidate_bags,
         top_k=3,
-        similarity_method="jaccard"
+        method="jaccard"
     )
     
     print(f"Top 3 similar bags to {query_bag}:")

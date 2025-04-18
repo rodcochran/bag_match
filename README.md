@@ -99,6 +99,44 @@ similar_bags = matcher.find_similar_bags(
 )
 ```
 
+## Running Simulations
+
+The library includes a simulation package for running experiments and comparing different similarity measures. The simulation uses a rich set of real words (fruits, vegetables, etc.) to generate interesting and realistic comparisons.
+
+### Running a Simulation
+
+```python
+from bag_match.simulation import (
+    run_simulation,
+    ModelConfig,
+    SimulationConfig
+)
+
+# Create configurations
+model_config = ModelConfig(
+    model_name="all-MiniLM-L6-v2"  # Good balance of speed and quality
+)
+
+sim_config = SimulationConfig(
+    num_bags=100,        # Number of random bags to generate
+    min_bag_size=15,     # Minimum size of each bag
+    max_bag_size=200,    # Maximum size of each bag
+    show_examples=3,     # Number of example bags to show detailed results for
+    top_k=10            # Number of top similar bags to find for each bag
+)
+
+# Run the simulation
+run_simulation(model_config, sim_config)
+```
+
+The simulation will:
+1. Generate random bags of items (using a rich set of real words)
+2. Calculate similarities using different measures
+3. Show statistics about the bags
+4. Display example comparisons
+5. Show agreement between different similarity measures
+6. Display the top similar bags for each measure
+
 ## API Reference
 
 ### BagMatcher

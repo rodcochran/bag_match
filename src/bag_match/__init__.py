@@ -23,24 +23,5 @@ Example:
 
 from bag_match.core.matcher import BagMatcher
 
-# Deprecated imports - will be removed in future versions
-from bag_match.core.analysis import (
-    find_top_similar_bags,
-    get_similarity_measures,
-    print_bag_statistics,
-    print_example_comparison,
-    print_agreement_results,
-    print_top_similar_bags
-)
-
 __version__ = "0.1.0"
-__all__ = [
-    "BagMatcher",
-    # Deprecated exports
-    "find_top_similar_bags",
-    "get_similarity_measures",
-    "print_bag_statistics",
-    "print_example_comparison",
-    "print_agreement_results",
-    "print_top_similar_bags"
-] 
+__all__ = ["BagMatcher"] 

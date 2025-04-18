@@ -1,31 +1,27 @@
-from bag_match.core import (
-    BagSimilarity,
-    find_top_similar_bags,
-    get_similarity_measures,
-    print_bag_statistics,
-    print_example_comparison,
-    print_agreement_results,
-    print_top_similar_bags
-)
-from bag_match.data import BagSimulator
-from bag_match.config import (
-    ModelConfig,
-    SimulationConfig,
-    PreTrainedModelConfig,
-    DEFAULT_PRETRAINED_CONFIG
-)
-from rich import print
-from typing import List, Set, Dict, Tuple
-import numpy as np
-from rich.progress import Progress, SpinnerColumn, TextColumn, BarColumn, TaskProgressColumn, TimeRemainingColumn
-import argparse
-from bag_match.core.simulation_utils import parse_arguments, create_configurations, run_simulation
+"""
+Example script demonstrating how to run a bag similarity simulation.
+"""
 
+from rich import print
+from bag_match.simulation import (
+    run_simulation,
+    ModelConfig,
+    SimulationConfig
+)
 
 def main():
-    # Parse arguments and create configurations
-    args = parse_arguments()
-    model_config, sim_config = create_configurations(args)
+    # Create configurations
+    model_config = ModelConfig(
+        model_name="all-MiniLM-L6-v2"
+    )
+    
+    sim_config = SimulationConfig(
+        num_bags=10,
+        min_bag_size=50,
+        max_bag_size=100,
+        show_examples=3,
+        top_k=5
+    )
     
     # Run the simulation
     run_simulation(model_config, sim_config)
