@@ -9,6 +9,12 @@ from numpy.typing import NDArray
 from sentence_transformers import SentenceTransformer
 from functools import lru_cache
 
+# Module-level cache for similarity results
+_similarity_cache: Dict[Tuple[str, str, str], float] = {}
+_MAX_CACHE_SIZE = 10000
+_cache_hits = 0
+_cache_total = 0
+
 class BagMatcher:
     """
     A class for finding similar bags of words using various similarity measures.
@@ -46,6 +52,8 @@ class BagMatcher:
         """
         self.model = None
         self._embedding_cache: Dict[str, NDArray[np.float32]] = {}
+        self._similarity_cache = {}
+        self._max_cache_size = 10000  # Limit cache size to prevent memory issues
         
         if model_name is not None:
             self.model = SentenceTransformer(model_name, cache_folder="./models")
@@ -104,16 +112,44 @@ class BagMatcher:
         Raises:
             ValueError: If method is "embedding" but no model was provided
         """
+        global _cache_hits, _cache_total
+        
+        # Create a consistent cache key by sorting the words and joining them
+        key1 = "|".join(sorted(bag1))
+        key2 = "|".join(sorted(bag2))
+        cache_key = (min(key1, key2), max(key1, key2), method)
+        
+        # Update total calls
+        _cache_total += 1
+        
+        # Check cache
+        if cache_key in _similarity_cache:
+            _cache_hits += 1
+            hit_ratio = _cache_hits / _cache_total
+            # print(f"Cache HIT! Ratio: {hit_ratio:.2%} ({_cache_hits}/{_cache_total})")
+            return _similarity_cache[cache_key]
+            
+        # Calculate similarity
         if method == "jaccard":
-            return self._jaccard_similarity(bag1, bag2)
+            result = self._jaccard_similarity(bag1, bag2)
         elif method == "embedding":
             if self.model is None:
                 raise ValueError("Embedding similarity requires a model. Please provide a model_name when creating BagMatcher.")
             embedding1 = self._get_bag_embedding(bag1)
             embedding2 = self._get_bag_embedding(bag2)
-            return self._cosine_similarity(embedding1, embedding2)
+            result = self._cosine_similarity(embedding1, embedding2)
         else:
             raise ValueError(f"Unknown similarity method: {method}. Use 'jaccard' or 'embedding'.")
+            
+        # Cache the result if we haven't hit the size limit
+        if len(_similarity_cache) < _MAX_CACHE_SIZE:
+            _similarity_cache[cache_key] = result
+            # print(f"Added to cache: {cache_key} -> {result}")
+            
+        # Print cache stats on misses too
+        hit_ratio = _cache_hits / _cache_total
+        # print(f"Cache MISS! Ratio: {hit_ratio:.2%} ({_cache_hits}/{_cache_total})")
+        return result
     
     def find_similar_bags(
         self,

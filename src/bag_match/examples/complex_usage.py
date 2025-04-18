@@ -11,6 +11,7 @@ This example shows how to:
 from rich import print
 from rich.console import Console
 from rich.table import Table
+from rich.progress import Progress
 from bag_match import BagMatcher
 from bag_match.simulation import (
     run_simulation,
@@ -52,11 +53,11 @@ def main():
         ),
         # Large bags with low similarity
         SimulationConfig(
-            num_bags=500,
-            min_bag_size=200,
+            num_bags=10000,
+            min_bag_size=50,
             max_bag_size=400,
-            show_examples=3,
-            top_k=5
+            show_examples=10,
+            top_k=25
         )
     ]
 
@@ -101,7 +102,10 @@ def main():
             for name, func in similarity_measures.items():
                 print(f"\nCalculating {name} similarities...")
                 results[name] = []
-                for i, bag in enumerate(bags):
+                with Progress() as progress:
+                    task = progress.add_task(f"Processing bags...", total=len(bags))
+                    for i, bag in enumerate(bags):
+                        progress.update(task, advance=1)
                     similar_bags = matcher.find_similar_bags(
                         query_bag=bag,
                         candidate_bags=bags[:i] + bags[i+1:],
