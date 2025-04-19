@@ -11,7 +11,15 @@ This example shows how to:
 from rich import print
 from rich.console import Console
 from rich.table import Table
-from rich.progress import Progress
+from rich.progress import (
+    Progress,
+    SpinnerColumn,
+    BarColumn,
+    TextColumn,
+    TimeElapsedColumn,
+    TimeRemainingColumn,
+    TaskProgressColumn
+)
 from bag_match import BagMatcher
 from bag_match.simulation import (
     run_simulation,
@@ -61,7 +69,7 @@ def main():
         )
     ]
 
-    configs = configs[2:]
+    configs = configs[:1]
     
     # Try different models
     models = [
@@ -102,17 +110,24 @@ def main():
             for name, func in similarity_measures.items():
                 print(f"\nCalculating {name} similarities...")
                 results[name] = []
-                with Progress() as progress:
+                with Progress(
+                    SpinnerColumn(),
+                    TextColumn("[progress.description]{task.description}"),
+                    BarColumn(),
+                    TaskProgressColumn(),
+                    TimeElapsedColumn(),
+                    TimeRemainingColumn(),
+                ) as progress:
                     task = progress.add_task(f"Processing bags...", total=len(bags))
                     for i, bag in enumerate(bags):
                         progress.update(task, advance=1)
-                    similar_bags = matcher.find_similar_bags(
-                        query_bag=bag,
-                        candidate_bags=bags[:i] + bags[i+1:],
-                        top_k=sim_config.top_k,
-                        method=name
-                    )
-                    results[name].append(similar_bags)
+                        similar_bags = matcher.find_similar_bags(
+                            query_bag=bag,
+                            candidate_bags=bags[:i] + bags[i+1:],
+                            top_k=sim_config.top_k,
+                            method=name
+                        )
+                        results[name].append(similar_bags)
             
             # Print results for example bags
             if sim_config.show_examples > 0:

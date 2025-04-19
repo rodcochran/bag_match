@@ -9,6 +9,8 @@ from numpy.typing import NDArray
 from sentence_transformers import SentenceTransformer
 from functools import lru_cache
 
+from rich.progress import Progress, SpinnerColumn, TextColumn, BarColumn, TaskProgressColumn
+
 # Module-level cache for similarity results
 _similarity_cache: Dict[Tuple[str, str, str], float] = {}
 _MAX_CACHE_SIZE = 10000
@@ -51,6 +53,7 @@ class BagMatcher:
                                       - "all-mpnet-base-v2": Higher quality but slower
         """
         self.model = None
+        self.model_name = model_name
         self._embedding_cache: Dict[str, NDArray[np.float32]] = {}
         self._similarity_cache = {}
         self._max_cache_size = 10000  # Limit cache size to prevent memory issues
@@ -117,7 +120,7 @@ class BagMatcher:
         # Create a consistent cache key by sorting the words and joining them
         key1 = "|".join(sorted(bag1))
         key2 = "|".join(sorted(bag2))
-        cache_key = (min(key1, key2), max(key1, key2), method)
+        cache_key = (min(key1, key2), max(key1, key2), method, self.model_name if method == "embedding" else None)
         
         # Update total calls
         _cache_total += 1
@@ -171,11 +174,12 @@ class BagMatcher:
             List[Tuple[Set[str], float]]: List of (bag, similarity_score) tuples,
                                          sorted by similarity score in descending order
         """
+        similarities = []
         # Calculate similarities
-        similarities = [
-            (bag, self.compare_bags(query_bag, bag, method))
-            for bag in candidate_bags
-        ]
+        for bag in candidate_bags:
+            similarities.append(
+                (bag, self.compare_bags(query_bag, bag, method))
+            )
         
         # Sort by similarity score in descending order
         similarities.sort(key=lambda x: x[1], reverse=True)

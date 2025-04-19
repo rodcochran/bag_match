@@ -45,6 +45,9 @@ for bag, score in similar_bags:
 - Efficient caching of word embeddings
 - Support for different embedding models
 - Easy to extend with custom similarity measures
+- Advanced simulation framework for large-scale experiments
+- Rich visualization of results and statistics
+- Progress tracking for long-running operations
 
 ## Usage
 
@@ -99,43 +102,83 @@ similar_bags = matcher.find_similar_bags(
 )
 ```
 
-## Running Simulations
+## Advanced Usage
 
-The library includes a simulation package for running experiments and comparing different similarity measures. The simulation uses a rich set of real words (fruits, vegetables, etc.) to generate interesting and realistic comparisons.
+### Running Large-Scale Simulations
 
-### Running a Simulation
+The library includes a comprehensive simulation framework for running experiments and comparing different similarity measures. You can configure various aspects of the simulation including bag sizes, number of bags, and similarity measures to use.
 
 ```python
+from bag_match import BagMatcher
 from bag_match.simulation import (
-    run_simulation,
     ModelConfig,
-    SimulationConfig
+    SimulationConfig,
+    BagSimulator
 )
+from rich.progress import Progress
 
-# Create configurations
-model_config = ModelConfig(
-    model_name="all-MiniLM-L6-v2"  # Good balance of speed and quality
-)
-
+# Create simulation configuration
 sim_config = SimulationConfig(
-    num_bags=100,        # Number of random bags to generate
-    min_bag_size=15,     # Minimum size of each bag
-    max_bag_size=200,    # Maximum size of each bag
-    show_examples=3,     # Number of example bags to show detailed results for
-    top_k=10            # Number of top similar bags to find for each bag
+    num_bags=10000,      # Number of random bags to generate
+    min_bag_size=50,     # Minimum size of each bag
+    max_bag_size=400,    # Maximum size of each bag
+    show_examples=10,    # Number of example bags to show detailed results for
+    top_k=25            # Number of top similar bags to find for each bag
 )
 
-# Run the simulation
-run_simulation(model_config, sim_config)
+# Initialize components
+matcher = BagMatcher(model_name="all-mpnet-base-v2")
+simulator = BagSimulator(config=sim_config)
+
+# Generate random bags
+print(f"Generating {sim_config.num_bags} random bags...")
+bags = simulator.generate_bags()
+
+# Calculate similarities with progress tracking
+with Progress() as progress:
+    task = progress.add_task("Processing bags...", total=len(bags))
+    for i, bag in enumerate(bags):
+        progress.update(task, advance=1)
+        similar_bags = matcher.find_similar_bags(
+            query_bag=bag,
+            candidate_bags=bags[:i] + bags[i+1:],
+            top_k=sim_config.top_k
+        )
 ```
 
-The simulation will:
-1. Generate random bags of items (using a rich set of real words)
-2. Calculate similarities using different measures
-3. Show statistics about the bags
-4. Display example comparisons
-5. Show agreement between different similarity measures
-6. Display the top similar bags for each measure
+### Comparing Multiple Models
+
+You can easily compare the performance of different embedding models:
+
+```python
+models = [
+    ModelConfig(model_name="all-MiniLM-L6-v2"),    # Fast and efficient
+    ModelConfig(model_name="all-mpnet-base-v2"),   # High quality
+    ModelConfig(model_name="multi-qa-mpnet-base-dot-v1")  # Optimized for search
+]
+
+for model_config in models:
+    matcher = BagMatcher(model_name=model_config.model_name)
+    # Run your analysis with each model
+```
+
+### Custom Similarity Measures
+
+You can define and use custom similarity measures:
+
+```python
+def get_similarity_measures(matcher: BagMatcher):
+    """Get a dictionary of similarity measure functions."""
+    return {
+        "embedding": lambda b1, b2: matcher.compare_bags(b1, b2, "embedding"),
+        "jaccard": lambda b1, b2: matcher.compare_bags(b1, b2, "jaccard")
+    }
+
+# Use the custom measures
+similarity_measures = get_similarity_measures(matcher)
+for name, func in similarity_measures.items():
+    similarity = func(bag1, bag2)
+```
 
 ## API Reference
 
@@ -173,6 +216,33 @@ Find the top k most similar bags to the query bag.
 - `top_k`: Number of most similar bags to return
 - `similarity_method`: Method to use for comparison
 - Returns: List of (bag, similarity_score) tuples, sorted by similarity score in descending order
+
+### Simulation Framework
+
+The simulation framework provides tools for running large-scale experiments and analyzing results.
+
+#### `SimulationConfig`
+
+Configuration for running simulations.
+
+- `num_bags`: Number of random bags to generate
+- `min_bag_size`: Minimum size of each bag
+- `max_bag_size`: Maximum size of each bag
+- `show_examples`: Number of example bags to show detailed results for
+- `top_k`: Number of top similar bags to find for each bag
+
+#### `ModelConfig`
+
+Configuration for different embedding models.
+
+- `model_name`: Name of the sentence transformer model to use
+
+#### `BagSimulator`
+
+Class for generating and analyzing random bags of words.
+
+- `generate_bags()`: Generate random bags according to the configuration
+- `get_bag_statistics(bags)`: Get statistics about the generated bags
 
 ## License
 
